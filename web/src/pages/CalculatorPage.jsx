@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { Plus, Minus, Calculator, Zap } from 'lucide-react';
+import { Calculator, Zap } from 'lucide-react';
 import { useDeviceProfiles } from '@/hooks/useDeviceProfiles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,11 +53,26 @@ const CalculatorPage = () => {
     }
   };
 
-  const adjustBattery = (amount) => {
-    setFormData(prev => ({
-      ...prev,
-      currentBattery: Math.max(0, Math.min(100, prev.currentBattery + amount))
-    }));
+  const handleCurrentBatteryChange = (e) => {
+    const raw = e.target.value;
+    // Allow empty string while typing
+    if (raw === '') {
+      setFormData(prev => ({ ...prev, currentBattery: '' }));
+      return;
+    }
+    const val = parseInt(raw, 10);
+    if (!isNaN(val)) {
+      setFormData(prev => ({ ...prev, currentBattery: Math.max(1, Math.min(100, val)) }));
+    }
+  };
+
+  const handleCurrentBatteryBlur = () => {
+    const val = parseInt(formData.currentBattery, 10);
+    if (isNaN(val) || val < 1) {
+      setFormData(prev => ({ ...prev, currentBattery: 1 }));
+    } else if (val > 100) {
+      setFormData(prev => ({ ...prev, currentBattery: 100 }));
+    }
   };
 
   const calculateChargingTime = () => {
@@ -246,32 +261,27 @@ const CalculatorPage = () => {
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <Label>Current Battery Level</Label>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => adjustBattery(-5)}
-                      className="border-white/10 hover:bg-white/5 h-12 w-12"
-                    >
-                      <Minus className="w-5 h-5" />
-                    </Button>
-                    <div className="flex-1 text-center">
-                      <div className="text-5xl font-bold gradient-text mb-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {formData.currentBattery}%
-                      </div>
+                <div className="space-y-3">
+                  <Label htmlFor="currentBattery">Current Battery Level</Label>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="text-5xl font-bold gradient-text" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {formData.currentBattery !== '' ? `${formData.currentBattery}%` : '—'}
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => adjustBattery(5)}
-                      className="border-white/10 hover:bg-white/5 h-12 w-12"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </Button>
+                    <div className="w-full relative">
+                      <Input
+                        id="currentBattery"
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={formData.currentBattery}
+                        onChange={handleCurrentBatteryChange}
+                        onBlur={handleCurrentBatteryBlur}
+                        placeholder="Enter % (1–100)"
+                        className="input-glass text-foreground text-center text-lg pr-10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Enter a value between 1 and 100</p>
                   </div>
                 </div>
 
